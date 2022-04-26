@@ -444,6 +444,60 @@ namespace CliquedinAPI.Controllers
             }
         }
 
+        public static async Task<CliquedinRetorno> SendBlockTemp(this Cliquedin cliquedin, string contaID)
+        {
+            CliquedinRetorno ret = new()
+            {
+                Response = "Error",
+                Status = -1
+            };
+            try
+            {
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, cliquedin.BasicUrl + $"profiles/blockTemp?profile={contaID}");
+                HttpResponseMessage res = await cliquedin.Client.SendAsync(request);
+                if (res.IsSuccessStatusCode)
+                {
+                    string serializado = await res.Content.ReadAsStringAsync();
+                    try
+                    {
+                        dynamic token = JsonConvert.DeserializeObject(serializado);
+                        if (token.message == "success")
+                        {
+                            ret.Status = 1;
+                            ret.Response = "Conta enviada";
+                            return ret;
+                        }
+                        else
+                        {
+                            ret.Status = 2;
+                            ret.Response = "Não foi possivel enviar a requisição";
+                            return ret;
+                        }
+                    }
+                    catch (Exception err)
+                    {
+                        LogCliquedin("Erro: " + err.Message + " || Retorno: " + serializado, "SendBlockTemp", cliquedin.BasicUrl + $"profiles/blockTemp?profile={contaID}");
+                        ret.Status = 2;
+                        ret.Response = "Não foi possivel enviar a requisição";
+                        return ret;
+                    }
+                }
+                else
+                {
+                    LogCliquedin("Retorno: " + await res.Content.ReadAsStringAsync(), "gettask", cliquedin.BasicUrl + $"postFollowers?profile={contaID}");
+                    ret.Response = "Não foi possivel se comunicar com a API do Cliquedin no momento";
+                    ret.Status = 0;
+                    return ret;
+                }
+            }
+            catch (Exception err)
+            {
+                ret.Status = -1;
+                ret.Response = "Error: " + err.Message;
+            }
+            return ret;
+        }
+
         public static async Task<CliquedinRetorno> GetAccountID(this Cliquedin cliquedin, string username)
         {
             CliquedinRetorno ret = new()
