@@ -6,6 +6,7 @@ using System.IO;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace CliquedinAPI.Controllers
 {
@@ -618,6 +619,53 @@ namespace CliquedinAPI.Controllers
                 ret.Status = -1;
             }
             return ret;
+        }
+
+        public static async Task<List<string>> GetProxy(this Cliquedin cliquedin)
+        {
+            //https://cliquedin.app/api/postFollowers/proxy
+            List<string> ret = new();
+            try
+            {
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://cliquedin.app/api/postFollowers/proxy");
+                HttpResponseMessage res = await cliquedin.Client.SendAsync(request);
+                if (res.IsSuccessStatusCode)
+                {
+                    string serializado = await res.Content.ReadAsStringAsync();
+                    try
+                    {
+                        dynamic token = JsonConvert.DeserializeObject(serializado);
+                        if (token.ip != null)
+                        {
+                            ret.Add(token.ip);
+                            ret.Add(token.port);
+                            ret.Add(token.user);
+                            ret.Add(token.password);
+                            return ret;
+                        }
+                        else
+                        {
+                            LogCliquedin($"Resposta: {serializado}", "GETPROXY", "https://cliquedin.app/api/postFollowers/proxy");
+                            return ret;
+                        }
+                    }
+                    catch (Exception err)
+                    {
+                        LogCliquedin($"Erro: {err.Message} || Resposta: {serializado}", "GETPROXY", "https://cliquedin.app/api/postFollowers/proxy");
+                        return ret;
+                    }
+                }
+                else
+                {
+                    LogCliquedin($"Resposta: {res.Content.ReadAsStringAsync().Result}", "GETPROXY", "https://cliquedin.app/api/postFollowers/proxy");
+                    return ret;
+                }
+            }
+            catch (Exception err)
+            {
+                LogCliquedin($"Resposta: {err.Message}", "GETPROXY", "https://cliquedin.app/api/postFollowers/proxy");
+                return ret;
+            }
         }
 
 
