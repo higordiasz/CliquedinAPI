@@ -637,10 +637,10 @@ namespace CliquedinAPI.Controllers
                         dynamic token = JsonConvert.DeserializeObject(serializado);
                         if (token.ip != null)
                         {
-                            ret.Add(token.ip);
-                            ret.Add(token.port);
-                            ret.Add(token.user);
-                            ret.Add(token.password);
+                            ret.Add(token.ip.ToString());
+                            ret.Add(token.port.ToString());
+                            ret.Add(token.user.ToString());
+                            ret.Add(token.password.ToString());
                             return ret;
                         }
                         else
@@ -668,6 +668,29 @@ namespace CliquedinAPI.Controllers
             }
         }
 
+        public static async Task SendAccountBlock(this Cliquedin cliquedin, string username, string blockType)
+        {
+            //https://cliquedin.app/api/profiles/block/{nome_perfil}?type=AcknowledgeForm - SMS
+            try
+            {
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, $"https://cliquedin.app/api/profiles/block/{username}?type={blockType}");
+                HttpResponseMessage res = await cliquedin.Client.SendAsync(request);
+                if (res.IsSuccessStatusCode)
+                {
+                    return;
+                }
+                else
+                {
+                    LogCliquedin($"Resposta: {res.Content.ReadAsStringAsync().Result}", "SendAccountBlock", $"https://cliquedin.app/api/profiles/block/{username}?type={blockType}");
+                    return;
+                }
+            }
+            catch (Exception err)
+            {
+                LogCliquedin($"Resposta: {err.Message}", "SendAccountBlock", $"https://cliquedin.app/api/profiles/block/{username}?type={blockType}");
+                return;
+            }
+        }
 
         private static string  DateString()
         {
