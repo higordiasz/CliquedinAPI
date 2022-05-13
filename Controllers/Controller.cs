@@ -373,12 +373,12 @@ namespace CliquedinAPI.Controllers
             return ret;
         }
 
-        public static async Task<bool> RegisteAccount(this Cliquedin cliquedin, string username, string genero, string contaID)
+        public static async Task<bool> RegisteAccount(this Cliquedin cliquedin, string username, string genero, string contaID, string lastPost)
         {
             bool ret = false;
             try
             {
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, cliquedin.BasicUrl + $"profiles?profile_id={contaID}&name={username.ToLower()}&genre={genero}");
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, cliquedin.BasicUrl + $"profiles?profile_id={contaID}&name={username.ToLower()}&genre={genero}&last_post_at={lastPost}");
                 HttpResponseMessage res = await cliquedin.Client.SendAsync(request);
                 if (res.IsSuccessStatusCode)
                 {
@@ -689,6 +689,68 @@ namespace CliquedinAPI.Controllers
             {
                 LogCliquedin($"Resposta: {err.Message}", "SendAccountBlock", $"https://cliquedin.app/api/profiles/block/{username}?type={blockType}");
                 return;
+            }
+        }
+
+        public static async Task SendFinaly(this Cliquedin cliquedin, string username)
+        {
+            //https://cliquedin.app/api/profiles/finisher/%7Bprofile%7D
+            try
+            {
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, $"https://cliquedin.app/api/profiles/finisher/{username}");
+                HttpResponseMessage res = await cliquedin.Client.SendAsync(request);
+                if (res.IsSuccessStatusCode)
+                {
+                    return;
+                }
+                else
+                {
+                    LogCliquedin($"Resposta: {res.Content.ReadAsStringAsync().Result}", "SendAccountBlock", $"https://cliquedin.app/api/profiles/finisher/{username}");
+                    return;
+                }
+            }
+            catch (Exception err)
+            {
+                LogCliquedin($"Resposta: {err.Message}", "SendAccountBlock", $"https://cliquedin.app/api/profiles/finisher/{username}");
+                return;
+            }
+        }
+
+        public static async Task<Dictionary<string, int>> GetMinMax(this Cliquedin cliquedin)
+        {
+            Dictionary<string, int> ret = new();
+            try
+            {
+                HttpRequestMessage req = new(HttpMethod.Get, "https://cliquedin.app/api/postFollowers/time");
+                HttpResponseMessage res = await cliquedin.Client.SendAsync(req);
+                if (res.IsSuccessStatusCode)
+                {
+                    string s = await res.Content.ReadAsStringAsync();
+                    dynamic json = JsonConvert.DeserializeObject(s);
+                    if (json.min != null)
+                    {
+                        ret.Add("min", Convert.ToInt32(json.min));
+                        ret.Add("max", Convert.ToInt32(json.max));
+                        return ret;
+                    }
+                    else
+                    {
+                        ret.Add("min", 180);
+                        ret.Add("max", 360);
+                        return ret;
+                    }
+                }
+                else
+                {
+                    ret.Add("min", 180);
+                    ret.Add("max", 360);
+                    return ret;
+                }
+            } catch
+            {
+                ret.Add("min", 180);
+                ret.Add("max", 360);
+                return ret;
             }
         }
 
