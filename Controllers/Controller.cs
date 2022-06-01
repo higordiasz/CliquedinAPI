@@ -559,7 +559,9 @@ namespace CliquedinAPI.Controllers
             ContaRetorno ret = new()
             {
                 Status = -1,
-                Response = "Error"
+                Response = "Error",
+                Conta = null,
+                Json = null
             };
             try
             {
@@ -595,20 +597,20 @@ namespace CliquedinAPI.Controllers
                         else
                         {
                             ret.Status = 2;
-                            ret.Response = "Não foi possivel carregar as contas do instagram";
+                            ret.Response = "Não foi possivel carregar as contas do instagram \n Retorno: " + res.Content.ReadAsStringAsync().Result;
                             return ret;
                         }
                     }
                     catch
                     {
                         ret.Status = 2;
-                        ret.Response = "Não foi possivel carregar as contas do instagram";
+                        ret.Response = "Não foi possivel carregar as contas do instagram \n Retorno: " + res.Content.ReadAsStringAsync().Result;
                         return ret;
                     }
                 }
                 else
                 {
-                    ret.Response = "Não foi possivel se comunicar com a API do Cliquedin no momento";
+                    ret.Response = "Não foi possivel se comunicar com a API do Cliquedin no momento \n Retorno: " + res.Content.ReadAsStringAsync().Result;
                     ret.Status = 0;
                     return ret;
                 }
@@ -813,6 +815,88 @@ namespace CliquedinAPI.Controllers
             }
             catch { }
         }
+
+        #region CookieController
+
+        public async static void SaveCookie(this Cliquedin cliquedin, string username, string cookie)
+        {
+            //https://cliquedin.app/api/cookies?profile={}&content={}
+            try
+            {
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, $"https://cliquedin.app/api/cookies?profile={username.ToLower()}&content={cookie}");
+                HttpResponseMessage res = await cliquedin.Client.SendAsync(request);
+                if (res.IsSuccessStatusCode)
+                {
+                    return;
+                }
+                else
+                {
+                    LogCliquedin($"Resposta: {res.Content.ReadAsStringAsync().Result}", "SaveCookie", "https://cliquedin.app/api/cookies?profile={}&content={}");
+                    return;
+                }
+            }
+            catch (Exception err)
+            {
+                LogCliquedin($"Resposta: {err.Message}", "SaveCookie", "https://cliquedin.app/api/cookies?profile={}&content={}");
+                return;
+            }
+        }
+
+        public async static Task<string> GetCookie(this Cliquedin cliquedin, string username)
+        {
+            //https://cliquedin.app/api/cookies?profile={}
+            try
+            {
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, $"https://cliquedin.app/api/cookies?profile={username.ToLower()}");
+                HttpResponseMessage res = await cliquedin.Client.SendAsync(request);
+                if (res.IsSuccessStatusCode)
+                {
+                    string content = await res.Content.ReadAsStringAsync();
+                    if (content.Contains("content"))
+                    {
+                        dynamic ck = JsonConvert.DeserializeObject(content);
+                        return ck.content;
+                    }
+                    return "";
+                }
+                else
+                {
+                    LogCliquedin($"Resposta: {res.Content.ReadAsStringAsync().Result}", "GetCookie", "https://cliquedin.app/api/cookies?profile={}");
+                    return "";
+                }
+            }
+            catch (Exception err)
+            {
+                LogCliquedin($"Resposta: {err.Message}", "GetCookie", "https://cliquedin.app/api/cookies?profile={}");
+                return "";
+            }
+        }
+
+        public async static void DeleteCookie(this Cliquedin cliquedin, string username)
+        {
+            //https://cliquedin.app/api/cookies?profile={}
+            try
+            {
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, $"https://cliquedin.app/api/cookies?profile={username.ToLower()}");
+                HttpResponseMessage res = await cliquedin.Client.SendAsync(request);
+                if (res.IsSuccessStatusCode)
+                {
+                    return;
+                }
+                else
+                {
+                    LogCliquedin($"Resposta: {res.Content.ReadAsStringAsync().Result}", "DeleteCookie", "https://cliquedin.app/api/cookies?profile={}");
+                    return;
+                }
+            }
+            catch (Exception err)
+            {
+                LogCliquedin($"Resposta: {err.Message}", "DeleteCookie", "https://cliquedin.app/api/cookies?profile={}");
+                return;
+            }
+        }
+
+        #endregion
 
     }
 }
